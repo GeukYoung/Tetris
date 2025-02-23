@@ -108,55 +108,50 @@ def draw_window(surface, grid, next_piece):
 
     pygame.display.update()
 
-def clear_rows(grid, locked):
-    increment = 0
+def clear_rows(grid, locked_positions):
     rows_to_clear = []
+    
     for i in range(len(grid)-1, -1, -1):
         row = grid[i]
         if BLACK not in row:
-            increment += 1
             rows_to_clear.append(i)
-            for j in range(len(row)):
-                try:
-                    del locked[(j, i)]
-                except KeyError:
-                    continue
+    
+    if not rows_to_clear:
+        return 0  # 삭제할 행이 없으면 0 반환
 
-    if increment > 0:
-        # Add blinking effect for all rows to clear
-        for ind in rows_to_clear:
-            for j in range(len(grid[ind])):
-                grid[ind][j] = WHITE
+    # 삭제 애니메이션 (흰색으로 깜빡이기)
+    for _ in range(1):
+        for row in rows_to_clear:
+            for col in range(GRID_WIDTH):
+                grid[row][col] = WHITE
         draw_window(screen, grid, next_piece)
         pygame.display.update()
-        pygame.time.delay(50)  # Shorter delay for faster blinking
+        pygame.time.delay(50)
 
-        for ind in rows_to_clear:
-            for j in range(len(grid[ind])):
-                grid[ind][j] = BLACK
+        for row in rows_to_clear:
+            for col in range(GRID_WIDTH):
+                grid[row][col] = BLACK
         draw_window(screen, grid, next_piece)
         pygame.display.update()
-        pygame.time.delay(50)  # Shorter delay for faster blinking
+        pygame.time.delay(50)
 
-        # Move rows down
-        for ind in rows_to_clear:
-            for y in range(ind, 0, -1):
-                for x in range(GRID_WIDTH):
-                    grid[y][x] = grid[y-1][x]
-                    if (x, y-1) in locked:
-                        locked[(x, y)] = locked.pop((x, y-1))
-                    else:
-                        locked.pop((x, y), None)
+    # 삭제된 줄 개수
+    num_rows_cleared = len(rows_to_clear)
+
+    # 행을 아래로 이동
+    for row in sorted(rows_to_clear):
+        for y in range(row, 0, -1):
             for x in range(GRID_WIDTH):
-                grid[0][x] = BLACK
+                grid[y][x] = grid[y-1][x]
+                if (x, y-1) in locked_positions:
+                    locked_positions[(x, y)] = locked_positions.pop((x, y-1))
+                else:
+                    locked_positions.pop((x, y), None)
+        for x in range(GRID_WIDTH):
+            grid[0][x] = BLACK  # 최상단 행을 비움
 
-        # Adjust locked positions
-        for i in range(len(grid)-1, -1, -1):
-            for j in range(GRID_WIDTH):
-                if grid[i][j] != BLACK:
-                    locked[(j, i)] = grid[i][j]
+    return num_rows_cleared
 
-    return increment
 
 def main():
     global screen, next_piece, grid
