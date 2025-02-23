@@ -3,6 +3,14 @@ import random
 
 # Initialize Pygame
 pygame.init()
+pygame.mixer.init() 
+
+# Load sound effects
+move_sound = pygame.mixer.Sound("move.mp3")   # 블록 이동 소리
+rotate_sound = pygame.mixer.Sound("move.mp3")  # 회전 소리
+drop_sound = pygame.mixer.Sound("drop.mp3")  # 하드 드롭 소리
+clear_sound = pygame.mixer.Sound("clear.mp3")  # 줄 클리어 소리
+gameover_sound = pygame.mixer.Sound("game_over.mp3")  # 줄 클리어 소리
 
 # Screen dimensions
 SCREEN_WIDTH = 300
@@ -110,7 +118,6 @@ def draw_window(surface, grid, next_piece):
 
 def clear_rows(grid, locked_positions):
     rows_to_clear = []
-    
     for i in range(len(grid)-1, -1, -1):
         row = grid[i]
         if BLACK not in row:
@@ -150,6 +157,7 @@ def clear_rows(grid, locked_positions):
         for x in range(GRID_WIDTH):
             grid[0][x] = BLACK  # 최상단 행을 비움
 
+    clear_sound.play()
     return num_rows_cleared
 
 
@@ -204,12 +212,14 @@ def main():
                 key_pressed[pygame.K_LEFT] = True
                 key_down_time[pygame.K_LEFT] = current_time
                 current_piece.x -= 1
+                move_sound.play() 
                 if not valid_space(current_piece, grid):
                     current_piece.x += 1
             elif current_time - key_down_time[pygame.K_LEFT] >= initial_move_delay * 1000:
                 if move_left_time == 0 or move_left_time / 1000 >= move_speed:
                     move_left_time = 0
                     current_piece.x -= 1
+                    move_sound.play() 
                     if not valid_space(current_piece, grid):
                         current_piece.x += 1
         else:
@@ -221,12 +231,14 @@ def main():
                 key_pressed[pygame.K_RIGHT] = True
                 key_down_time[pygame.K_RIGHT] = current_time
                 current_piece.x += 1
+                move_sound.play() 
                 if not valid_space(current_piece, grid):
                     current_piece.x -= 1
             elif current_time - key_down_time[pygame.K_RIGHT] >= initial_move_delay * 1000:
                 if move_right_time == 0 or move_right_time / 1000 >= move_speed:
                     move_right_time = 0
                     current_piece.x += 1
+                    move_sound.play() 
                     if not valid_space(current_piece, grid):
                         current_piece.x -= 1
         else:
@@ -238,12 +250,14 @@ def main():
                 key_pressed[pygame.K_DOWN] = True
                 key_down_time[pygame.K_DOWN] = current_time
                 current_piece.y += 1
+                move_sound.play() 
                 if not valid_space(current_piece, grid):
                     current_piece.y -= 1
             elif current_time - key_down_time[pygame.K_DOWN] >= initial_move_delay * 1000:
                 if move_down_time == 0 or move_down_time / 1000 >= move_speed:
                     move_down_time = 0
                     current_piece.y += 1
+                    move_sound.play() 
                     if not valid_space(current_piece, grid):
                         current_piece.y -= 1
         else:
@@ -257,10 +271,12 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_z:
                     current_piece.rotate_counterclockwise()
+                    move_sound.play() 
                     if not current_piece.is_valid_position():
                         current_piece.rotate()
                 if event.key == pygame.K_UP:
                     current_piece.rotate()
+                    move_sound.play() 
                     if not current_piece.is_valid_position():
                         current_piece.rotate_counterclockwise()
                 if event.key == pygame.K_SPACE:
@@ -268,6 +284,7 @@ def main():
                         current_piece.y += 1
                     current_piece.y -= 1
                     change_piece = True
+                    drop_sound.play()
             if event.type == pygame.KEYUP:
                 if event.key in key_pressed:
                     key_pressed[event.key] = False
@@ -312,6 +329,7 @@ def check_lost(positions):
     for pos in positions:
         x, y = pos
         if y < 1:
+            gameover_sound.play()
             return True
     return False
 
