@@ -24,11 +24,11 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 COLORS = [
     (0, 255, 255),  # Cyan
-    (0, 0, 255),    # Blue
-    (255, 165, 0),  # Orange
-    (255, 255, 0),  # Yellow
-    (0, 255, 0),    # Green
+    (255, 255, 0), # Yellow
     (128, 0, 128),  # Purple
+    (0, 0, 255),  # Blue
+    (255, 127, 0),    # Orange
+    (0, 255, 0),  # Green
     (255, 0, 0)     # Red
 ]
 
@@ -187,6 +187,8 @@ def main():
         pygame.K_RIGHT: False,
         pygame.K_DOWN: False
     }
+    lock_delay = 1000  # 1초 유예시간
+    lock_start_time = None
 
     while True:
         grid = create_grid(locked_positions)
@@ -202,7 +204,12 @@ def main():
             current_piece.y += 1
             if not valid_space(current_piece, grid) and current_piece.y > 0:
                 current_piece.y -= 1
-                change_piece = True
+                if lock_start_time is None:
+                    lock_start_time = pygame.time.get_ticks()
+                elif pygame.time.get_ticks() - lock_start_time >= lock_delay:
+                    change_piece = True
+            else:
+                lock_start_time = None
 
         keys = pygame.key.get_pressed()
         current_time = pygame.time.get_ticks()
