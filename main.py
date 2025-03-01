@@ -3,7 +3,7 @@ import random
 
 # Initialize Pygame
 pygame.init()
-pygame.mixer.init() 
+pygame.mixer.init()
 
 # Load sound effects
 move_sound = pygame.mixer.Sound("move.mp3")   # 블록 이동 소리
@@ -11,6 +11,45 @@ rotate_sound = pygame.mixer.Sound("move.mp3")  # 회전 소리
 drop_sound = pygame.mixer.Sound("drop.mp3")  # 하드 드롭 소리
 clear_sound = pygame.mixer.Sound("clear.mp3")  # 줄 클리어 소리
 gameover_sound = pygame.mixer.Sound("game_over.mp3")  # 줄 클리어 소리
+combo1_sound = pygame.mixer.Sound("combo_1.ogg")  # 콤보 소리
+combo2_sound = pygame.mixer.Sound("combo_2.ogg")  # 콤보 소리
+combo3_sound = pygame.mixer.Sound("combo_3.ogg")  # 콤보 소리
+combo4_sound = pygame.mixer.Sound("combo_4.ogg")  # 콤보 소리
+combo5_sound = pygame.mixer.Sound("combo_5.ogg")  # 콤보 소리
+combo6_sound = pygame.mixer.Sound("combo_6.ogg")  # 콤보 소리
+combo7_sound = pygame.mixer.Sound("combo_7.ogg")  # 콤보 소리
+combo8_sound = pygame.mixer.Sound("combo_8.ogg")  # 콤보 소리
+combo9_sound = pygame.mixer.Sound("combo_9.ogg")  # 콤보 소리
+combo10_sound = pygame.mixer.Sound("combo_10.ogg")  # 콤보 소리
+combo11_sound = pygame.mixer.Sound("combo_11.ogg")  # 콤보 소리
+combo12_sound = pygame.mixer.Sound("combo_12.ogg")  # 콤보 소리
+combo13_sound = pygame.mixer.Sound("combo_13.ogg")  # 콤보 소리
+combo14_sound = pygame.mixer.Sound("combo_14.ogg")  # 콤보 소리
+combo15_sound = pygame.mixer.Sound("combo_15.ogg")  # 콤보 소리
+combo16_sound = pygame.mixer.Sound("combo_16.ogg")  # 콤보 소리
+
+# Set volume for combo sounds
+move_sound.set_volume(0.4)
+rotate_sound.set_volume(0.4)
+drop_sound.set_volume(0.4)
+clear_sound.set_volume(0.4)
+gameover_sound.set_volume(0.4)
+combo1_sound.set_volume(1.0)
+combo2_sound.set_volume(1.0)
+combo3_sound.set_volume(1.0)
+combo4_sound.set_volume(1.0)
+combo5_sound.set_volume(1.0)
+combo6_sound.set_volume(1.0)
+combo7_sound.set_volume(1.0)
+combo8_sound.set_volume(1.0)
+combo9_sound.set_volume(1.0)
+combo10_sound.set_volume(1.0)
+combo11_sound.set_volume(1.0)
+combo12_sound.set_volume(1.0)
+combo13_sound.set_volume(1.0)
+combo14_sound.set_volume(1.0)
+combo15_sound.set_volume(1.0)
+combo16_sound.set_volume(1.0)
 
 # Screen dimensions
 SCREEN_WIDTH = 300
@@ -98,7 +137,7 @@ def draw_grid(surface, grid):
     for y in range(GRID_HEIGHT):
         pygame.draw.line(surface, WHITE, (0, y * GRID_SIZE), (SCREEN_WIDTH, y * GRID_SIZE))
 
-def draw_window(surface, grid, next_piece):
+def draw_window(surface, grid, next_piece, score):
     surface.fill(BLACK)
     draw_grid(surface, grid)
 
@@ -113,6 +152,10 @@ def draw_window(surface, grid, next_piece):
         for j, column in enumerate(line):
             if column == 1:
                 pygame.draw.rect(surface, next_piece.color, (SCREEN_WIDTH + 10 + j * GRID_SIZE, 70 + i * GRID_SIZE, GRID_SIZE, GRID_SIZE), 0)
+
+    # Draw score
+    score_label = font.render(f'Score: {score}', 1, WHITE)
+    surface.blit(score_label, (SCREEN_WIDTH + 10, SCREEN_HEIGHT - 30))
 
     pygame.display.update()
 
@@ -131,14 +174,14 @@ def clear_rows(grid, locked_positions):
         for row in rows_to_clear:
             for col in range(GRID_WIDTH):
                 grid[row][col] = WHITE
-        draw_window(screen, grid, next_piece)
+        draw_window(screen, grid, next_piece, score)
         pygame.display.update()
         pygame.time.delay(50)
 
         for row in rows_to_clear:
             for col in range(GRID_WIDTH):
                 grid[row][col] = BLACK
-        draw_window(screen, grid, next_piece)
+        draw_window(screen, grid, next_piece, score)
         pygame.display.update()
         pygame.time.delay(50)
 
@@ -156,13 +199,50 @@ def clear_rows(grid, locked_positions):
                     locked_positions.pop((x, y), None)
         for x in range(GRID_WIDTH):
             grid[0][x] = BLACK  # 최상단 행을 비움
-
-    clear_sound.play()
     return num_rows_cleared
 
+def update_score(rows_cleared, combo):
+    base_scores = {1: 1000, 2: 2000, 3: 4000, 4: 6000}
+    score = base_scores.get(rows_cleared, 0)
+    if rows_cleared > 0:
+        if combo > 1:
+            score += (combo-1) * 1000
+            if combo == 2:
+                combo1_sound.play()
+            if combo == 3:
+                combo2_sound.play()
+            elif combo == 4:
+                combo3_sound.play()
+            elif combo == 5:
+                combo4_sound.play()
+            elif combo == 6:
+                combo5_sound.play()
+            elif combo == 7:
+                combo6_sound.play()
+            elif combo == 8:
+                combo7_sound.play()
+            elif combo == 9:
+                combo8_sound.play()
+            elif combo == 10:
+                combo9_sound.play()
+            elif combo == 11:
+                combo10_sound.play()
+            elif combo == 12:
+                combo11_sound.play()
+            elif combo == 13:
+                combo12_sound.play()
+            elif combo == 14:
+                combo13_sound.play()
+            elif combo == 15:
+                combo14_sound.play()
+            elif combo >= 16:
+                combo15_sound.play()
+        elif combo < 2:
+            clear_sound.play()        
+    return score
 
 def main():
-    global screen, next_piece, grid
+    global screen, next_piece, grid, score
     screen = pygame.display.set_mode((SCREEN_WIDTH + 150, SCREEN_HEIGHT))
     pygame.display.set_caption('Tetris')
     clock = pygame.time.Clock()
@@ -189,6 +269,8 @@ def main():
     }
     lock_delay = 1000  # 1초 유예시간
     lock_start_time = None
+    score = 0
+    combo = 0
 
     while True:
         grid = create_grid(locked_positions)
@@ -310,7 +392,12 @@ def main():
             next_piece = Tetrimino(random.randint(0, len(SHAPES) - 1))
             change_piece = False
 
-            clear_rows(grid, locked_positions)
+            rows_cleared = clear_rows(grid, locked_positions)
+            if rows_cleared > 0:
+                combo += 1
+            else:
+                combo = 0
+            score += update_score(rows_cleared, combo)
 
             if check_lost(locked_positions):
                 draw_text_middle("YOU LOST!", 80, WHITE, screen)
@@ -318,8 +405,10 @@ def main():
                 pygame.time.delay(1500)
                 locked_positions = {}
                 grid = create_grid(locked_positions)
+                score = 0
+                combo = 0
 
-        draw_window(screen, grid, next_piece)
+        draw_window(screen, grid, next_piece, score)
 
 def valid_space(piece, grid):
     accepted_positions = [[(x, y) for x in range(GRID_WIDTH) if grid[y][x] == BLACK] for y in range(GRID_HEIGHT)]
