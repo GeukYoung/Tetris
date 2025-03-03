@@ -52,11 +52,13 @@ combo15_sound.set_volume(1.0)
 combo16_sound.set_volume(1.0)
 
 # Screen dimensions
-SCREEN_WIDTH = 300
+SCREEN_WIDTH = 300  # 기존 300
 SCREEN_HEIGHT = 600
 GRID_SIZE = 30
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
+SIDE_PANEL_WIDTH = 150  # 좌측과 우측 패널의 너비
+TOTAL_WIDTH = SCREEN_WIDTH + 2 * SIDE_PANEL_WIDTH  # 전체 화면 너비
 
 # Colors
 BLACK = (0, 0, 0)
@@ -84,6 +86,7 @@ SHAPES = [
 
 class Tetrimino:
     def __init__(self, shape_index):
+        self.shape_index = shape_index
         self.shape = SHAPES[shape_index]
         self.color = COLORS[shape_index]
         self.x = GRID_WIDTH // 2 - len(self.shape[0]) // 2
@@ -131,13 +134,13 @@ def create_grid(locked_positions={}):
 def draw_grid(surface, grid):
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
-            pygame.draw.rect(surface, grid[y][x], (x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE), 0)
+            pygame.draw.rect(surface, grid[y][x], (SIDE_PANEL_WIDTH + x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE), 0)
     for x in range(GRID_WIDTH):
-        pygame.draw.line(surface, WHITE, (x * GRID_SIZE, 0), (x * GRID_SIZE, SCREEN_HEIGHT))
+        pygame.draw.line(surface, WHITE, (SIDE_PANEL_WIDTH + x * GRID_SIZE, 0), (SIDE_PANEL_WIDTH + x * GRID_SIZE, SCREEN_HEIGHT))
     for y in range(GRID_HEIGHT):
-        pygame.draw.line(surface, WHITE, (0, y * GRID_SIZE), (SCREEN_WIDTH, y * GRID_SIZE))
+        pygame.draw.line(surface, WHITE, (SIDE_PANEL_WIDTH, y * GRID_SIZE), (SIDE_PANEL_WIDTH + SCREEN_WIDTH, y * GRID_SIZE))
 
-def draw_window(surface, grid, next_piece, score):
+def draw_window(surface, grid, next_piece, score, saved_piece):
     surface.fill(BLACK)
     draw_grid(surface, grid)
 
@@ -145,19 +148,33 @@ def draw_window(surface, grid, next_piece, score):
     font = pygame.font.SysFont('comicsans', 30)
     label = font.render('Next', 1, WHITE)
 
-    surface.blit(label, (SCREEN_WIDTH + 10, 30))
+    surface.blit(label, (SCREEN_WIDTH + SIDE_PANEL_WIDTH + 10, 30))
     format = next_piece.shape
 
     for i, line in enumerate(format):
         for j, column in enumerate(line):
             if column == 1:
-                pygame.draw.rect(surface, next_piece.color, (SCREEN_WIDTH + 10 + j * GRID_SIZE, 70 + i * GRID_SIZE, GRID_SIZE, GRID_SIZE), 0)
+                pygame.draw.rect(surface, next_piece.color, (SCREEN_WIDTH + SIDE_PANEL_WIDTH + 10 + j * GRID_SIZE, 70 + i * GRID_SIZE, GRID_SIZE, GRID_SIZE), 0)
 
     # Draw score
-    score_label = font.render(f'Score: {score}', 1, WHITE)
-    surface.blit(score_label, (SCREEN_WIDTH + 10, SCREEN_HEIGHT - 30))
+    score_label = font.render(f'{score}', 1, WHITE)
+    surface.blit(score_label, (SCREEN_WIDTH + SIDE_PANEL_WIDTH + 10, SCREEN_HEIGHT - 60))
+
+    # Draw saved piece
+    draw_saved_piece(surface, saved_piece)
 
     pygame.display.update()
+
+def draw_saved_piece(surface, saved_piece):
+    font = pygame.font.SysFont('comicsans', 30)
+    label = font.render('Saved', 1, WHITE)
+    surface.blit(label, (10, 30))
+    if saved_piece:
+        format = saved_piece.shape
+        for i, line in enumerate(format):
+            for j, column in enumerate(line):
+                if column == 1:
+                    pygame.draw.rect(surface, saved_piece.color, (10 + j * GRID_SIZE, 70 + i * GRID_SIZE, GRID_SIZE, GRID_SIZE), 0)
 
 def clear_rows(grid, locked_positions):
     rows_to_clear = []
@@ -174,14 +191,14 @@ def clear_rows(grid, locked_positions):
         for row in rows_to_clear:
             for col in range(GRID_WIDTH):
                 grid[row][col] = WHITE
-        draw_window(screen, grid, next_piece, score)
+        draw_window(screen, grid, next_piece, score, saved_piece)
         pygame.display.update()
         pygame.time.delay(50)
 
         for row in rows_to_clear:
             for col in range(GRID_WIDTH):
                 grid[row][col] = BLACK
-        draw_window(screen, grid, next_piece, score)
+        draw_window(screen, grid, next_piece, score, saved_piece)
         pygame.display.update()
         pygame.time.delay(50)
 
@@ -242,8 +259,8 @@ def update_score(rows_cleared, combo):
     return score
 
 def main():
-    global screen, next_piece, grid, score
-    screen = pygame.display.set_mode((SCREEN_WIDTH + 150, SCREEN_HEIGHT))
+    global screen, next_piece, grid, score, saved_piece, can_save
+    screen = pygame.display.set_mode((TOTAL_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption('Tetris')
     clock = pygame.time.Clock()
     locked_positions = {}
@@ -251,6 +268,8 @@ def main():
     change_piece = False
     current_piece = Tetrimino(random.randint(0, len(SHAPES) - 1))
     next_piece = Tetrimino(random.randint(0, len(SHAPES) - 1))
+    saved_piece = None
+    can_save = True
     fall_time = 0
     move_left_time = 0
     move_right_time = 0
@@ -374,6 +393,17 @@ def main():
                     current_piece.y -= 1
                     change_piece = True
                     drop_sound.play()
+                if event.key == pygame.K_LSHIFT and can_save:
+                    if saved_piece is None:
+                        saved_piece = Tetrimino(current_piece.shape_index)
+                        current_piece = next_piece
+                        next_piece = Tetrimino(random.randint(0, len(SHAPES) - 1))
+                    else:
+                        temp_piece = Tetrimino(current_piece.shape_index)
+                        current_piece = Tetrimino(saved_piece.shape_index)
+                        saved_piece = temp_piece
+                    can_save = False
+
             if event.type == pygame.KEYUP:
                 if event.key in key_pressed:
                     key_pressed[event.key] = False
@@ -391,6 +421,7 @@ def main():
             current_piece = next_piece
             next_piece = Tetrimino(random.randint(0, len(SHAPES) - 1))
             change_piece = False
+            can_save = True
 
             rows_cleared = clear_rows(grid, locked_positions)
             if rows_cleared > 0:
@@ -400,7 +431,7 @@ def main():
             score += update_score(rows_cleared, combo)
 
             if check_lost(locked_positions):
-                draw_text_middle("YOU LOST!", 80, WHITE, screen)
+                draw_text_middle("   T_T", 250, WHITE, screen)
                 pygame.display.update()
                 pygame.time.delay(1500)
                 locked_positions = {}
@@ -408,7 +439,7 @@ def main():
                 score = 0
                 combo = 0
 
-        draw_window(screen, grid, next_piece, score)
+        draw_window(screen, grid, next_piece, score, saved_piece)
 
 def valid_space(piece, grid):
     accepted_positions = [[(x, y) for x in range(GRID_WIDTH) if grid[y][x] == BLACK] for y in range(GRID_HEIGHT)]
